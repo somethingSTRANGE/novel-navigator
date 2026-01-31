@@ -1,0 +1,19 @@
+/* Fix for inconsistent default view-header height */
+.view-header {
+	min-height: var(--header-height);
+}
+
+/* Novel Navigator toolbar */
+.novel-navigator-toolbar {
+	display: none; /* hidden by default */
+	padding: 4px 8px;
+	border-bottom: 1px solid var(--background-modifier-border);
+	background-color: var(--background-secondary);
+	font-size: 12px;
+	line-height: 1.4;
+}
+
+/* Visible only for markdown views */
+.workspace-leaf-content[data-type="markdown"] .novel-navigator-toolbar {
+	display: block;
+}

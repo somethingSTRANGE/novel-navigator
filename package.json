@@ -1,0 +1,21 @@
+{
+  "name": "novel-navigator",
+  "version": "1.0.0",
+  "description": "A strange Obsidian plugin for navigating novels, chapters, and their many moving parts.",
+  "main": "index.js",
+  "scripts": {
+	  "build": "esbuild src/main.ts --bundle --platform=node --target=es2020 --external:obsidian --outfile=dist/main.js && copy manifest.json dist\\manifest.json && copy src\\styles.css dist\\styles.css",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+	"keywords": [],
+  "author": "",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "obsidian": "^1.11.4"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.10",
+    "esbuild": "^0.27.2",
+    "typescript": "^5.9.3"
+  }
+}

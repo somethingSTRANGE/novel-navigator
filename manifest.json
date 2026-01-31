@@ -1,0 +1,10 @@
+{
+	"id": "novel-navigator",
+	"name": "Novel Navigator",
+	"version": "0.0.1",
+	"minAppVersion": "1.5.0",
+	"description": "A strange Obsidian plugin for navigating novels, chapters, and their many moving parts.",
+	"author": "Michael Ryan",
+	"authorUrl": "",
+	"isDesktopOnly": false
+}
