@@ -61,7 +61,9 @@
 }
 
 .nn-meta-container .nn-segment:not(:first-child)::before {
-	content: "/";
+	content: "•";
+	content: "·";
+	content: "::";
 	color: var(--text-muted);
 	margin: 0 0.5rem;
 	opacity: 0.5;

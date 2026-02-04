@@ -42,7 +42,7 @@ interface ChapterContext {
     chapterLabel: string;
     chapterNumber: number | null;
 
-    stage: "outline" | "draft" | "final";
+    stage: ChapterStage;
 }
 
 interface ChapterEntry {
@@ -57,6 +57,7 @@ interface ChapterEntry {
     datetime?: string;
     location?: string;
 
+    info?: TFile;
     outline?: TFile;
     draft?: TFile;
     final?: TFile;
@@ -89,7 +90,7 @@ interface NovelIndex {
     stages: Map<string, StageEntry>;
 }
 
-type ChapterStage = "outline" | "draft" | "final";
+type ChapterStage = "info" | "outline" | "draft" | "final";
 
 type NavigationTarget =
     | { kind: "file"; file: TFile }
@@ -237,6 +238,7 @@ export default class NovelNavigatorPlugin extends Plugin {
                     chapterLabel: "",
                     datetime: fm.chapter_datetime,
                     location: fm.chapter_location,
+                    info: chapterFile,
                     outline: this.resolveWikiLink(fm.chapter_outline, chapterFile),
                     draft: this.resolveWikiLink(fm.chapter_draft, chapterFile),
                     final: this.resolveWikiLink(fm.chapter_final, chapterFile),
@@ -356,9 +358,15 @@ export default class NovelNavigatorPlugin extends Plugin {
         // 2. Chapter info files
         const chapter = chapters.get(file.path);
         if (chapter) {
-            return {
-                kind: "chapter-info",
+            // wrap chapter info as a StageEntry
+            const stageEntry: StageEntry = {
                 chapter,
+                stage: "info",
+                file: chapter.info!, // we just added this
+            };
+            return {
+                kind: "chapter-stage",
+                stage: stageEntry,
             };
         }
 
@@ -604,7 +612,7 @@ export default class NovelNavigatorPlugin extends Plugin {
             
             // Info navigation
             bookInfo: this.getBookInfoTarget(chapter.book),
-            chapterInfo: this.getChapterInfoTarget(chapter),
+            chapterInfo: this.getStageTarget(chapter, "info"),
         };
     }
 
@@ -668,28 +676,6 @@ export default class NovelNavigatorPlugin extends Plugin {
                 return;
             }
 
-            case "chapter-info": {
-                // toolbar.classList.add("is-chapter-info");
-                //
-                // const chapter = mode.chapter;
-                // const nav = this.getNavigationTargetsForChapter(chapter);
-                //
-                // this.buildChapterToolbar(
-                //     toolbar,
-                //     chapter,
-                //     null,
-                //     nav,
-                //     file,
-                //     this.createIconNavButton(
-                //         bookSvg,
-                //         "Open Book Info",
-                //         nav.bookInfo,
-                //         file
-                //     )
-                // );
-                return;
-            }
-
             case "chapter-stage": {
                 toolbar.classList.add("is-chapter-stage");
                 toolbar.dataset.nnType = "chapter-stage";
@@ -705,79 +691,11 @@ export default class NovelNavigatorPlugin extends Plugin {
                     stage,
                     nav,
                     file,
-                    this.createIconNavButton(
-                        chapterSvg,
-                        "Open Chapter Info",
-                        nav.chapterInfo,
-                        file
-                    )
+                    stage.stage === "info"
+                        ? this.createIconNavButton(bookSvg, "Open Book Info", nav.bookInfo, file)
+                        : this.createIconNavButton(chapterSvg, "Open Chapter Info", nav.chapterInfo, file)
                 );
                 return;
-                
-//                 const stage = mode.stage;
-//                 const chapter = stage.chapter;
-//
-//                 toolbar.classList.add("is-chapter-stage");
-//                 toolbar.dataset.nnType = "chapter-stage";
-//                 toolbar.dataset.nnStage = stage.stage;
-//
-//
-//                 const nav = this.getNavigationTargets(stage);
-//                 const currentStage = stage.stage;
-//
-//                 const controls = document.createElement("div");
-//                 controls.className = "nn-controls";
-//
-//                 const stageControls = document.createElement("div");
-//                 stageControls.className = "nn-stage-controls";
-//
-//                 const navItems = [
-//                     { svg: outlineSvg, label: "Open Outline", target: nav.outline, stage: "outline" as const },
-//                     { svg: draftSvg,   label: "Open Draft",   target: nav.draft,   stage: "draft"   as const },
-//                     { svg: finalSvg,   label: "Open Final",   target: nav.final,   stage: "final"   as const },
-//                 ];
-//
-//                 navItems.forEach(({ svg, label, target, stage }) => {
-//                     stageControls.append(this.createIconNavButton(svg, label, target, file, stage));
-//                 });                
-//                
-//                 const chapterControls = document.createElement("div");
-//                 chapterControls.className = "nn-chapter-controls";
-//                
-//                 chapterControls.append(
-//                     this.createIconNavButton(prevSvg, "Previous Chapter", nav.previous, file),
-//                     this.createIconNavButton(nextSvg, "Next Chapter", nav.next, file),
-//                 )
-//                
-//                
-//                 controls.append(stageControls, chapterControls);
-//
-//                 const info = document.createElement("div");
-//                 info.className = "nn-meta-container";
-//                 info.innerHTML = `
-// <span class="nn-segment nn-book">${chapter.book.title}</span>
-// <span class="nn-segment nn-chapter-label"><span>${chapter.chapterLabel}</span></span>
-// <span class="nn-segment nn-datetime">${chapter.datetime}</span>
-// <span class="nn-segment nn-location">${chapter.location}</span>
-// </span>
-// `;
-//
-//                 toolbar.append(controls, info);
-//
-//                 const rightControls = document.createElement("div");
-//                 rightControls.className = "nn-controls";
-//
-//                 const infoControls = document.createElement("div");
-//                 infoControls.className = "nn-chapter-controls";
-//
-//                 infoControls.append(
-//                     this.createIconNavButton(chapterSvg, "Open Chapter Info", nav.chapterInfo, file)
-//                 )
-//
-//                 rightControls.append(infoControls);
-//                 toolbar.append(rightControls);
-//                
-//                 return;
             }
         }
     }
