@@ -4,7 +4,8 @@
   "description": "A strange Obsidian plugin for navigating novels, chapters, and their many moving parts.",
   "main": "index.js",
   "scripts": {
-	  "build": "esbuild src/main.ts --bundle --platform=node --target=es2020 --external:obsidian --loader:.svg=text --outfile=dist/main.js && copy manifest.json dist\\manifest.json && copy src\\styles.css dist\\styles.css",
+	  "dev": "node esbuild.config.js",
+	  "build": "node esbuild.config.js production",
 	  "test": "echo \"Error: no test specified\" && exit 1"
   },
 	"keywords": [],
