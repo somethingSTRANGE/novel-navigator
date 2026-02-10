@@ -1,0 +1,49 @@
+.nn-toolbar[data-nn-type="book-info"] {
+	justify-content: center;
+
+	& .nn-controls {
+		display: flex;
+		position: relative;
+		align-items: center;
+		justify-content: center;
+		height: var(--size-4-6);
+		overflow: hidden;
+		_width: 100%;
+		_flex-wrap: nowrap;
+		--icon-size: 16px;
+	}
+
+	& .clickable-icon {
+		display: flex;
+		position: relative;
+		flex: 0 0 auto;
+		flex-shrink: 0;
+		align-items: center;
+		justify-content: center;
+		min-width: calc(var(--size-4-4) + (var(--size-2-3) * 2));
+		height: 24px;
+		border: 1px solid silver;
+
+		&.is-hidden {
+			display: none !important;
+		}
+
+		&::after {
+			content: attr(data-width);
+			position: absolute;
+			top: 14px;
+			padding: 0 0.25em;
+			background-color: blue;
+			color: white;
+			font-size: 10px;
+			line-height: 1;
+		}
+	}
+
+	& .nn-overflow-btn {
+		display: none; /* Hidden by default */
+		flex-shrink: 0;
+		width: 30px;
+		margin: 0 4px;
+	}
+}

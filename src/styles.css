@@ -1,92 +1,95 @@
-/* Fix for inconsistent default view-header height */
-.view-header {
-	min-height: var(--header-height);
-}
 
-/* Novel Navigator toolbar */
-.nn-toolbar {
-	display: none; /* hidden by default */
-	padding: 6px 12px;
-	border-bottom: 1px solid var(--background-modifier-border);
-	background-color: var(--background-secondary);
-	font-size: 12px;
-	line-height: 1.4;
-	gap: 16px;
-}
 
-/* Visible only for markdown views */
-.workspace-leaf-content[data-type="markdown"] .nn-toolbar {
+
+
+
+
+
+.nn-controls-left {
 	display: flex;
-}
-
-.nn-controls {
-	--icon-size: 16px;
-	display: flex;
-	height: max-content;
-	gap: 16px;
-}
-
-.nn-stage-controls {
-	display: flex;
-	gap: 1px;
-	border-radius: var(--clickable-icon-radius);
-	box-shadow: inset 0 0 4px 1px rgba(0, 0, 0, 0.5);
-}
-
-.nn-chapter-controls {
-	display: flex;
-}
-
-.clickable-icon[aria-disabled="true"][data-active] {
-	background-color: var(--background-modifier-hover);
-	cursor: default;
-	opacity: 1;
-}
-
-
-
-
-.nn-meta-container {
-	display: flex;
-	flex: 1 1 auto;
-	align-items: center;
-	white-space: nowrap;
+	flex-direction: row;
+	flex-wrap: wrap;
+	flex: 0 1 auto; /* Don't force them to fill the screen; only grow if needed */
+	flex: 0 1 45%;
+	height: 24px;
 	overflow: hidden;
-	font-size: 0.625rem;
-	container-type: inline-size;
+	justify-content: flex-start;
 }
 
-.nn-segment {
-	white-space: nowrap;       /* keep the segment together */
-}
-
-.nn-meta-container .nn-segment:not(:first-child)::before {
-	content: "•";
-	content: "·";
-	content: "::";
-	color: var(--text-muted);
-	margin: 0 0.5rem;
-	opacity: 0.5;
-}
-
-.nn-segment.nn-chapter-label {
-	color: var(--text-normal);
-	flex-shrink: 0;  /* never shrink */
-}
-
-.nn-segment.nn-chapter-label > span {
-	background-color: var(--background-modifier-border);
-	padding: 0.125rem 0.375rem;
-	border-radius: 0.25rem;
-}
-
-.nn-segment.nn-book,
-.nn-segment.nn-datetime,
-.nn-segment.nn-location {
-	color: var(--text-muted);
-	flex-shrink: 1;            /* can shrink/disappear */
-	min-width: 20px;           /* allows proper shrinking */
+.nn-controls-right {
+	display: flex;
+	flex-direction: row-reverse; /* Magic bit: wraps from the left side */
+	flex-wrap: wrap;
+	flex: 0 1 auto; /* Don't force them to fill the screen; only grow if needed */
+		/* The Magic: We give it a slightly higher basis than 50%.
+				 Because flex-grow is 0, it won't actually TAKE more space 
+				 than it needs, but it will START wrapping its internal items 
+				 sooner than the left side. */
+	flex: 0 1 55%;
+	height: 24px;
 	overflow: hidden;
-	text-overflow: ellipsis;   /* truncate if too long */
-	white-space: nowrap;       /* keep the segment together */
+	justify-content: flex-start; /* Because direction is reversed, this is visually Right */
+	padding-left: 2px;
+}
+
+.nn-controls-left, .nn-controls-right {
+	flex: 0 1 auto; /* Don't force them to fill the screen; only grow if needed */
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+.nn-book-controls-wrapper {
+	.nn-controls-left {
+		button:nth-child(1) {
+			background-color: red;
+		}
+		button:nth-child(2) {
+			background-color: green;
+		}
+		button:nth-child(3) {
+			background-color: blue;
+		}
+	}
 }
