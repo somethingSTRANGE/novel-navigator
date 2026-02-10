@@ -1,8 +1,9 @@
 // src/toolbars/BaseToolbar.ts
-import { App, TFile } from "obsidian";
+import {App} from "obsidian";
 
 export abstract class BaseToolbar {
-    constructor(protected app: App) {}
+    protected constructor(protected app: App) {
+    }
 
     protected svgFromString(svgText: string): SVGElement {
         const template = document.createElement("template");
@@ -14,17 +15,18 @@ export abstract class BaseToolbar {
         iconSvg: SVGElement,
         ariaLabel: string,
         onClick: () => void,
-        disabled = false,
+        isDisabled = false,
         isActive = false
     ): HTMLButtonElement {
         const btn = document.createElement("button");
         btn.className = "clickable-icon";
+        btn.setAttribute("aria-disabled", "false");
         btn.setAttribute("aria-label", ariaLabel);
 
         if (isActive) {
             btn.setAttribute("aria-disabled", "true");
             btn.dataset.active = "";
-        } else if (disabled) {
+        } else if (isDisabled) {
             btn.setAttribute("aria-disabled", "true");
             btn.disabled = true;
         } else {

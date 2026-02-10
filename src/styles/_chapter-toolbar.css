@@ -61,11 +61,11 @@
 	& .nn-meta__segment--chapter {
 		flex-shrink: 0; /* never shrink */
 		color: var(--text-normal);
+	}
 
-		& > span {
-			padding: 0.125rem 0.375rem;
-			border-radius: 0.25rem;
-			background-color: var(--background-modifier-border);
-		}
+	& .nn-meta__segment--chapter-label {
+		padding: 0.125rem 0.375rem;
+		border-radius: 0.25rem;
+		background-color: var(--background-modifier-border);
 	}
 }
