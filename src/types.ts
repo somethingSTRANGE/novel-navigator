@@ -10,20 +10,6 @@ export interface BookEntry {
     chapters: ChapterEntry[];
 }
 
-export interface ChapterContext {
-    bookFile: TFile;
-    chapterFile: TFile;
-    stageFile: TFile;
-
-    bookTitle: string;
-    chapterIndex: number; // 0-based index within book.chapters
-    chapterKind: "prologue" | "chapter" | "epilogue";
-    chapterLabel: string;
-    chapterNumber: number | null;
-
-    stage: ChapterStage;
-}
-
 export interface ChapterEntry {
     book: BookEntry;
     file: TFile;

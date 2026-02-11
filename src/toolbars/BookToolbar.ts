@@ -104,15 +104,6 @@ export class BookToolbar extends BaseToolbar {
         });
     }
 
-    private setupObserver() {
-        this.observer = new ResizeObserver((entries) => {
-            const rect = entries[0].contentRect;
-            if (rect.width <= 0) return;
-            void this.runLayout(rect.width);
-        });
-        window.requestAnimationFrame(() => this.observer.observe(this.controls));
-    }
-
     private async runLayout(containerWidth: number) {
         // Wait for CSS if widths are not cached or seem incorrect
 
@@ -171,5 +162,62 @@ export class BookToolbar extends BaseToolbar {
                 this.overflowBtn.style.display = "none";
             }
         }
+    }
+
+    private buildBookToolbarTruncateEnd(toolbar: HTMLElement, book: BookEntry) {
+        toolbar.innerHTML = "";
+
+        const controls = document.createElement("div");
+        controls.className = "nn-book-controls";
+
+        const createChapterButton = (chapter: ChapterEntry, label: string) => {
+            const btn = document.createElement("button");
+            btn.classList.add("clickable-icon");
+            btn.setAttribute("aria-disabled", "false");
+            btn.setAttribute("aria-label", chapter.chapterLabel);
+            btn.textContent = label;
+
+            // // Optional: tooltip with Act info
+            // if (chapter.act) {
+            //     btn.title = `Act ${chapter.act} · ${label}`;
+            // }
+
+            btn.addEventListener("click", () => {
+                if (chapter.file) {
+                    // Open in current leaf
+                    this.app.workspace.openLinkText(chapter.file.path, "/", false);
+                }
+            });
+
+            return btn;
+        };
+
+        let chapterCounter = 0;
+        const buttons: HTMLElement[] = [];
+
+        book.chapters.forEach(chapter => {
+            let label: string;
+
+            switch (chapter.kind) {
+                case "prologue":
+                    label = "Prologue";
+                    break;
+                case "epilogue":
+                    label = "Epilogue";
+                    break;
+                case "chapter":
+                    chapterCounter++;
+                    label = String(chapterCounter);
+                    break;
+                default:
+                    // Fallback: just show the kind
+                    label = chapter.kind;
+            }
+
+            buttons.push(createChapterButton(chapter, label));
+        });
+
+        buttons.forEach(btn => controls.appendChild(btn));
+        toolbar.appendChild(controls);
     }
 }

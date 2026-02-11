@@ -14,7 +14,6 @@ import {ChapterToolbar} from "./toolbars/ChapterToolbar";
 
 import {
     BookEntry,
-    ChapterContext,
     ChapterEntry,
     ChapterNavigationTargets,
     ChapterStage,
@@ -25,11 +24,6 @@ import {
     ToolbarMode,
 } from "./types";
 
-// ─────────────────────────────────────────────
-// Types
-// ─────────────────────────────────────────────
-
-
 export default class NovelNavigatorPlugin extends Plugin {
 
     // ─────────────────────────────────────────────
@@ -38,6 +32,7 @@ export default class NovelNavigatorPlugin extends Plugin {
 
     private novelIndex: NovelIndex | null = null;
 
+    private handlers = new Map<WorkspaceLeaf, BookToolbar | ChapterToolbar>();
     private toolbars = new Map<WorkspaceLeaf, HTMLElement>();
 
     // scanning + caching logic
@@ -63,7 +58,6 @@ export default class NovelNavigatorPlugin extends Plugin {
 
         // ----
 
-
         // Initial scan of existing leaves
         this.app.workspace.iterateAllLeaves((leaf) => {
             this.ensureToolbar(leaf);
@@ -75,13 +69,6 @@ export default class NovelNavigatorPlugin extends Plugin {
             if (leaf) {
                 this.ensureToolbar(leaf);
                 this.updateToolbarForLeaf(leaf);
-            }
-
-            // temp debugging
-            const file = this.app.workspace.getActiveFile();
-            if (file) {
-                const context = this.getChapterContextForFile(file);
-                console.log("ChapterContext:", context);
             }
         }));
 
@@ -95,16 +82,16 @@ export default class NovelNavigatorPlugin extends Plugin {
 
     }
 
-
     onunload() {
         console.log("Novel Navigator unloaded");
 
-        // Remove all injected toolbars
-        this.toolbars.forEach((toolbar) => {
-            toolbar.remove();
-        });
+        // 1. Destroy all handlers (disconnects observers)
+        this.handlers.forEach(handler => handler.destroy());
+        this.handlers.clear();
 
-        this.toolbars = new Map();
+        // 2. Remove the actual DOM elements
+        this.toolbars.forEach(toolbar => toolbar.remove());
+        this.toolbars.clear();
     }
 
     // ─────────────────────────────────────────────
@@ -239,35 +226,6 @@ export default class NovelNavigatorPlugin extends Plugin {
     // ─────────────────────────────────────────────
     // Context Resolution
     // ─────────────────────────────────────────────
-
-    private getChapterContextForFile(file: TFile): ChapterContext | null {
-        const stageEntry = this.findChapterStageForFile(file);
-        if (!stageEntry) {
-            return null;
-        }
-
-        const {chapter, stage} = stageEntry;
-
-        return {
-            bookFile: chapter.book.file,
-            chapterFile: chapter.file,
-            stageFile: stageEntry.file,
-
-            bookTitle: chapter.book.title,
-            chapterIndex: chapter.index,
-            chapterKind: chapter.kind,
-            chapterLabel: chapter.chapterLabel,
-            chapterNumber: chapter.chapterNumber,
-            stage,
-        }
-    }
-
-    private findChapterStageForFile(file: TFile): StageEntry | null {
-        if (!this.novelIndex) return null;
-
-        return this.novelIndex.stages.get(file.path) ?? null;
-    }
-
     private resolveToolbarModeForFile(file: TFile): ToolbarMode {
         if (!this.novelIndex) {
             return {kind: "none"};
@@ -275,7 +233,7 @@ export default class NovelNavigatorPlugin extends Plugin {
 
         const {books, chapters, stages} = this.novelIndex;
 
-        // 1. Chapter stage files (highest specificity)
+        // 1. Chapter stage files (the highest specificity)
         const stage = stages.get(file.path);
         if (stage) {
             return {
@@ -361,63 +319,6 @@ export default class NovelNavigatorPlugin extends Plugin {
     // UI Helpers
     // ─────────────────────────────────────────────
 
-    private buildBookToolbarTruncateEnd(toolbar: HTMLElement, book: BookEntry) {
-        toolbar.innerHTML = "";
-
-        const controls = document.createElement("div");
-        controls.className = "nn-book-controls";
-
-        const createChapterButton = (chapter: ChapterEntry, label: string) => {
-            const btn = document.createElement("button");
-            btn.classList.add("clickable-icon");
-            btn.setAttribute("aria-disabled", "false");
-            btn.setAttribute("aria-label", chapter.chapterLabel);
-            btn.textContent = label;
-
-            // // Optional: tooltip with Act info
-            // if (chapter.act) {
-            //     btn.title = `Act ${chapter.act} · ${label}`;
-            // }
-
-            btn.addEventListener("click", () => {
-                if (chapter.file) {
-                    // Open in current leaf
-                    this.app.workspace.openLinkText(chapter.file.path, "/", false);
-                }
-            });
-
-            return btn;
-        };
-
-        let chapterCounter = 0;
-        const buttons: HTMLElement[] = [];
-
-        book.chapters.forEach(chapter => {
-            let label: string;
-
-            switch (chapter.kind) {
-                case "prologue":
-                    label = "Prologue";
-                    break;
-                case "epilogue":
-                    label = "Epilogue";
-                    break;
-                case "chapter":
-                    chapterCounter++;
-                    label = String(chapterCounter);
-                    break;
-                default:
-                    // Fallback: just show the kind
-                    label = chapter.kind;
-            }
-
-            buttons.push(createChapterButton(chapter, label));
-        });
-
-        buttons.forEach(btn => controls.appendChild(btn));
-        toolbar.appendChild(controls);
-    }
-
     private getAdjacentChapterTarget(
         chapter: ChapterEntry,
         stage: ChapterStage,
@@ -481,7 +382,7 @@ export default class NovelNavigatorPlugin extends Plugin {
         if (!link) return undefined;
 
         const dest = this.app.metadataCache.getFirstLinkpathDest(
-            link.replace(/^\[\[|\]\]$/g, ""),
+            link.replace(/^\[\[|]]$/g, ""),
             sourceFile.path
         );
 
@@ -504,6 +405,8 @@ export default class NovelNavigatorPlugin extends Plugin {
 
         const mode = this.resolveToolbarModeForFile(file);
 
+        let handler = this.handlers.get(leaf);
+
         switch (mode.kind) {
             case "none": {
                 toolbar.textContent = "Not a Novel Navigator file";
@@ -514,10 +417,16 @@ export default class NovelNavigatorPlugin extends Plugin {
                 toolbar.setAttribute("data-nn-type", "book-info");
                 toolbar.setAttribute("data-nn-mode", "truncate-middle");
 
-                // const book = mode.book;
-                // this.buildBookToolbar(toolbar, book);
+                if (handler && !(handler instanceof BookToolbar)) {
+                    handler.destroy();
+                    handler = undefined;
+                }
 
-                const handler = new BookToolbar(this.app, toolbar, {ellipsis: ellipsisIcon});
+                if (!handler) {
+                    handler = new BookToolbar(this.app, toolbar, {ellipsis: ellipsisIcon});
+                    this.handlers.set(leaf, handler);
+                }
+
                 handler.update(mode.book);
                 return;
             }
@@ -526,15 +435,24 @@ export default class NovelNavigatorPlugin extends Plugin {
                 toolbar.setAttribute("data-nn-type", "chapter-stage");
                 toolbar.removeAttribute("data-nn-mode");
 
-                const handler = new ChapterToolbar(this.app, toolbar, {
-                    book: bookIcon,
-                    chapter: chapterIcon,
-                    draft: draftIcon,
-                    final: finalIcon,
-                    next: nextIcon,
-                    outline: outlineIcon,
-                    previous: previousIcon
-                });
+                if (handler && !(handler instanceof ChapterToolbar)) {
+                    handler.destroy();
+                    handler = undefined;
+                }
+
+                if (!handler) {
+                    handler = new ChapterToolbar(this.app, toolbar, {
+                        book: bookIcon,
+                        chapter: chapterIcon,
+                        draft: draftIcon,
+                        final: finalIcon,
+                        next: nextIcon,
+                        outline: outlineIcon,
+                        previous: previousIcon
+                    });
+
+                    this.handlers.set(leaf, handler);
+                }
 
                 const stageEntry = mode.stage;
                 handler.update(stageEntry, this.getNavigationTargets(stageEntry), file);
