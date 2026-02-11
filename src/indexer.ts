@@ -8,10 +8,13 @@ import {
     NavigationTarget,
     NovelIndex,
     PendingBook,
-    StageEntry
+    StageEntry,
+    ToolbarMode
 } from "./types";
 
 export class NovelIndexer {
+    private lastIndex: NovelIndex | null = null;
+
     constructor(private app: App) {
     }
 
@@ -110,7 +113,31 @@ export class NovelIndexer {
             }
         }
 
-        return {books, chapters, stages};
+        const index = {books, chapters, stages};
+        this.lastIndex = index; // Cache it for navigation lookups.
+        return index;
+    }
+
+    public resolveToolbarModeForFile(file: TFile): ToolbarMode {
+        if (!this.lastIndex) return {kind: "none"};
+
+        const {books, chapters, stages} = this.lastIndex;
+
+        const stage = stages.get(file.path);
+        if (stage) return {kind: "chapter-stage", stage};
+
+        const chapter = chapters.get(file.path);
+        if (chapter) {
+            return {
+                kind: "chapter-stage",
+                stage: {chapter, stage: "info", file: chapter.info!},
+            };
+        }
+
+        const book = books.get(file.path);
+        if (book) return {kind: "book-info", book};
+
+        return {kind: "none"};
     }
 
     public resolveWikiLink(link: string | undefined, sourceFile: TFile): TFile | undefined {
@@ -123,6 +150,10 @@ export class NovelIndexer {
     }
 
     public getNavigationTargets(stage: StageEntry): ChapterNavigationTargets {
+        if (!this.lastIndex) {
+            console.warn("Navigation requested before index was built.");
+        }
+
         const {chapter} = stage;
 
         return {

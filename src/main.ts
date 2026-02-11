@@ -1,4 +1,4 @@
-import {MarkdownView, Plugin, TFile, WorkspaceLeaf} from "obsidian";
+import {MarkdownView, Plugin, WorkspaceLeaf} from "obsidian";
 
 import outlineIcon from "./icons/outline/list-tree.solid.svg";
 import draftIcon from "./icons/draft/pen-line.solid.svg";
@@ -11,25 +11,14 @@ import ellipsisIcon from "./icons/ellipsis/ellipsis.solid.svg";
 
 import {NovelIndexer} from "./indexer";
 
-import {NovelIndex, StageEntry, ToolbarMode,} from "./types";
-
 import {BookToolbar} from "./toolbars/BookToolbar";
 import {ChapterToolbar} from "./toolbars/ChapterToolbar";
 
 export default class NovelNavigatorPlugin extends Plugin {
-
-    // ─────────────────────────────────────────────
-    // Book / Chapter Index
-    // ─────────────────────────────────────────────
-
-    private novelIndex: NovelIndex | null = null;
     private indexer!: NovelIndexer;
 
     private handlers = new Map<WorkspaceLeaf, BookToolbar | ChapterToolbar>();
     private toolbars = new Map<WorkspaceLeaf, HTMLElement>();
-
-    // scanning + caching logic
-
 
     // ─────────────────────────────────────────────
     // Plugin lifecycle
@@ -49,8 +38,6 @@ export default class NovelNavigatorPlugin extends Plugin {
                 });
             })
         );
-
-        // ----
 
         // Initial scan of existing leaves
         this.app.workspace.iterateAllLeaves((leaf) => {
@@ -93,62 +80,14 @@ export default class NovelNavigatorPlugin extends Plugin {
     // ─────────────────────────────────────────────
 
     private async rebuildNovelIndex() {
-        this.novelIndex = await this.indexer.buildIndex();
+        let index = await this.indexer.buildIndex();
 
         console.log("Novel index rebuilt", {
-            books: this.novelIndex.books.size,
-            chapters: this.novelIndex.chapters.size,
-            stages: this.novelIndex.stages.size,
+            books: index.books.size,
+            chapters: index.chapters.size,
+            stages: index.stages.size,
         });
     }
-
-    // ─────────────────────────────────────────────
-    // Context Resolution
-    // ─────────────────────────────────────────────
-    private resolveToolbarModeForFile(file: TFile): ToolbarMode {
-        if (!this.novelIndex) {
-            return {kind: "none"};
-        }
-
-        const {books, chapters, stages} = this.novelIndex;
-
-        // 1. Chapter stage files (the highest specificity)
-        const stage = stages.get(file.path);
-        if (stage) {
-            return {
-                kind: "chapter-stage",
-                stage,
-            };
-        }
-
-        // 2. Chapter info files
-        const chapter = chapters.get(file.path);
-        if (chapter) {
-            // wrap chapter info as a StageEntry
-            const stageEntry: StageEntry = {
-                chapter,
-                stage: "info",
-                file: chapter.info!, // we just added this
-            };
-            return {
-                kind: "chapter-stage",
-                stage: stageEntry,
-            };
-        }
-
-        // 3. Book info files
-        const book = books.get(file.path);
-        if (book) {
-            return {
-                kind: "book-info",
-                book,
-            };
-        }
-
-        // 4. Everything else
-        return {kind: "none"};
-    }
-
 
     // ─────────────────────────────────────────────
     // Toolbar Injection
@@ -198,7 +137,6 @@ export default class NovelNavigatorPlugin extends Plugin {
     // UI Helpers
     // ─────────────────────────────────────────────
 
-
     private updateToolbarForLeaf(leaf: WorkspaceLeaf) {
         const view = leaf.view;
         const file = view instanceof MarkdownView ? view.file : null;
@@ -210,10 +148,7 @@ export default class NovelNavigatorPlugin extends Plugin {
         );
         if (!toolbar) return;
 
-        toolbar.innerHTML = "";
-        toolbar.className = "nn-toolbar";
-
-        const mode = this.resolveToolbarModeForFile(file);
+        const mode = this.indexer.resolveToolbarModeForFile(file);
 
         let handler = this.handlers.get(leaf);
 
