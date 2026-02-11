@@ -26,6 +26,7 @@ export class ChapterToolbar extends BaseToolbar {
     }
 
     public update(stageEntry: StageEntry, nav: ChapterNavigationTargets, file: TFile) {
+        this.container.className = "nn-toolbar";
         this.container.innerHTML = "";
         const {chapter, stage} = stageEntry;
 

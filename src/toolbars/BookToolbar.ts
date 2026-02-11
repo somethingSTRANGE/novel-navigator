@@ -32,6 +32,7 @@ export class BookToolbar extends BaseToolbar {
     }
 
     public update(book: BookEntry) {
+        this.container.className = "nn-toolbar";
         this.container.innerHTML = "";
         this.container.dataset.nnType = "book-info";
 
