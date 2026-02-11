@@ -9,20 +9,12 @@ import chapterIcon from "./icons/chapter-info/section.solid.svg";
 import bookIcon from "./icons/book-info/book-section.solid.svg";
 import ellipsisIcon from "./icons/ellipsis/ellipsis.solid.svg";
 
+import {NovelIndexer} from "./indexer";
+
+import {NovelIndex, StageEntry, ToolbarMode,} from "./types";
+
 import {BookToolbar} from "./toolbars/BookToolbar";
 import {ChapterToolbar} from "./toolbars/ChapterToolbar";
-
-import {
-    BookEntry,
-    ChapterEntry,
-    ChapterNavigationTargets,
-    ChapterStage,
-    NavigationTarget,
-    NovelIndex,
-    PendingBook,
-    StageEntry,
-    ToolbarMode,
-} from "./types";
 
 export default class NovelNavigatorPlugin extends Plugin {
 
@@ -31,6 +23,7 @@ export default class NovelNavigatorPlugin extends Plugin {
     // ─────────────────────────────────────────────
 
     private novelIndex: NovelIndex | null = null;
+    private indexer!: NovelIndexer;
 
     private handlers = new Map<WorkspaceLeaf, BookToolbar | ChapterToolbar>();
     private toolbars = new Map<WorkspaceLeaf, HTMLElement>();
@@ -45,6 +38,7 @@ export default class NovelNavigatorPlugin extends Plugin {
     async onload() {
         console.log("Novel Navigator loaded");
 
+        this.indexer = new NovelIndexer(this.app);
         await this.rebuildNovelIndex();
 
         this.registerEvent(
@@ -99,127 +93,12 @@ export default class NovelNavigatorPlugin extends Plugin {
     // ─────────────────────────────────────────────
 
     private async rebuildNovelIndex() {
-        const pendingBooks: PendingBook[] = [];
-        const cache = this.app.metadataCache;
-        const files = this.app.vault.getMarkdownFiles();
-
-        // 1. Discover book info files
-        for (const file of files) {
-            const fm = cache.getFileCache(file)?.frontmatter;
-            if (!fm?.book_title || !Array.isArray(fm.chapters)) {
-                continue;
-            }
-
-            const chapterFiles = fm.chapters.map((link: string) => this.resolveWikiLink(link, file)).filter((f): f is TFile => !!f);
-            const prologueFile = this.resolveWikiLink(fm.prologue, file);
-            const epilogueFile = this.resolveWikiLink(fm.epilogue, file);
-
-            pendingBooks.push({
-                bookFile: file,
-                title: fm.book_title,
-                prologueFile: prologueFile,
-                epilogueFile: epilogueFile,
-                chapterFiles: chapterFiles
-            });
-        }
-
-        // 2. Build chapter entries
-        const books = new Map<string, BookEntry>();
-        const chapters = new Map<string, ChapterEntry>();
-        const stages = new Map<string, StageEntry>();
-
-        for (const pending of pendingBooks) {
-            const book: BookEntry = {
-                file: pending.bookFile,
-                title: pending.title,
-                prologue: undefined,
-                epilogue: undefined,
-                chapters: [],
-            };
-
-            books.set(book.file.path, book);
-
-            // Combine prologue, chapter files, epilogue
-            const allChapterFiles = [pending.prologueFile, ...pending.chapterFiles, pending.epilogueFile].filter(Boolean) as TFile[];
-
-            allChapterFiles.forEach((chapterFile, index) => {
-                const fm = cache.getFileCache(chapterFile)?.frontmatter ?? {};
-
-                const chapter: ChapterEntry = {
-                    book,
-                    file: chapterFile,
-                    index,
-                    kind: chapterFile === pending.prologueFile ? "prologue" : chapterFile === pending.epilogueFile ? "epilogue" : "chapter",
-                    chapterNumber: null,
-                    chapterLabel: "",
-                    datetime: fm.chapter_datetime,
-                    location: fm.chapter_location,
-                    info: chapterFile,
-                    outline: this.resolveWikiLink(fm.chapter_outline, chapterFile),
-                    draft: this.resolveWikiLink(fm.chapter_draft, chapterFile),
-                    final: this.resolveWikiLink(fm.chapter_final, chapterFile),
-                };
-
-                book.chapters.push(chapter);
-
-                if (chapter.kind === "prologue") {
-                    book.prologue = chapter;
-                }
-                if (chapter.kind === "epilogue") {
-                    book.epilogue = chapter;
-                }
-
-                chapters.set(chapterFile.path, chapter);
-            });
-
-            // Assign chapter numbers and labels
-            let chapterCounter = 0;
-
-            for (const chapter of book.chapters) {
-                switch (chapter.kind) {
-                    case "prologue":
-                        chapter.chapterNumber = null;
-                        chapter.chapterLabel = "Prologue";
-                        break;
-
-                    case "chapter":
-                        chapterCounter++;
-                        chapter.chapterNumber = chapterCounter;
-                        chapter.chapterLabel = `Chapter ${chapterCounter}`;
-                        break;
-
-                    case "epilogue":
-                        chapter.chapterNumber = null;
-                        chapter.chapterLabel = "Epilogue";
-                        break;
-                }
-            }
-        }
-
-        // 3. Build stage entries
-        for (const chapter of chapters.values()) {
-            ([
-                ["outline", chapter.outline],
-                ["draft", chapter.draft],
-                ["final", chapter.final],
-            ] as const).forEach(([stage, file]) => {
-                if (!file) return;
-
-                stages.set(file.path, {
-                    file,
-                    chapter,
-                    stage,
-                });
-            });
-        }
-
-        // 4. Assign and log
-        this.novelIndex = {books, chapters, stages};
+        this.novelIndex = await this.indexer.buildIndex();
 
         console.log("Novel index rebuilt", {
-            books: books.size,
-            chapters: chapters.size,
-            stages: stages.size,
+            books: this.novelIndex.books.size,
+            chapters: this.novelIndex.chapters.size,
+            stages: this.novelIndex.stages.size,
         });
     }
 
@@ -319,75 +198,6 @@ export default class NovelNavigatorPlugin extends Plugin {
     // UI Helpers
     // ─────────────────────────────────────────────
 
-    private getAdjacentChapterTarget(
-        chapter: ChapterEntry,
-        stage: ChapterStage,
-        direction: "previous" | "next"
-    ): NavigationTarget {
-        const chapters = chapter.book.chapters;
-        const delta = direction === "next" ? 1 : -1;
-        const targetIndex = chapter.index + delta;
-
-        if (targetIndex < 0 || targetIndex >= chapters.length) {
-            return {kind: "disabled"};
-        }
-
-        const targetChapter = chapters[targetIndex];
-        const file = targetChapter[stage];
-
-        // If the target chapter doesn’t have that stage, disable
-        return file
-            ? {kind: "file", file}
-            : {kind: "disabled"};
-    }
-
-    private getBookInfoTarget(bookEntry: BookEntry): NavigationTarget {
-        const file = bookEntry.file;
-        return file
-            ? {kind: "file", file}
-            : {kind: "disabled"};
-    }
-
-    private getNavigationTargets(stage: StageEntry): ChapterNavigationTargets {
-        const {chapter} = stage;
-
-        return {
-            // Stage navigation
-            outline: this.getStageTarget(chapter, "outline"),
-            draft: this.getStageTarget(chapter, "draft"),
-            final: this.getStageTarget(chapter, "final"),
-
-            // Chapter navigation
-            previous: this.getAdjacentChapterTarget(chapter, stage.stage, "previous"),
-            next: this.getAdjacentChapterTarget(chapter, stage.stage, "next"),
-
-            // Info navigation
-            bookInfo: this.getBookInfoTarget(chapter.book),
-            chapterInfo: this.getStageTarget(chapter, "info"),
-        };
-    }
-
-    private getStageTarget(
-        chapter: ChapterEntry,
-        stage: ChapterStage
-    ): NavigationTarget {
-        const file = chapter[stage];
-        return file ? {kind: "file", file} : {kind: "disabled"};
-    }
-
-    private resolveWikiLink(
-        link: string | undefined,
-        sourceFile: TFile
-    ): TFile | undefined {
-        if (!link) return undefined;
-
-        const dest = this.app.metadataCache.getFirstLinkpathDest(
-            link.replace(/^\[\[|]]$/g, ""),
-            sourceFile.path
-        );
-
-        return dest ?? undefined;
-    }
 
     private updateToolbarForLeaf(leaf: WorkspaceLeaf) {
         const view = leaf.view;
@@ -455,7 +265,7 @@ export default class NovelNavigatorPlugin extends Plugin {
                 }
 
                 const stageEntry = mode.stage;
-                handler.update(stageEntry, this.getNavigationTargets(stageEntry), file);
+                handler.update(stageEntry, this.indexer.getNavigationTargets(stageEntry), file);
                 return;
             }
         }
