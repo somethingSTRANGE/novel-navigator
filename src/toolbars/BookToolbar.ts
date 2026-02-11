@@ -83,6 +83,7 @@ export class BookToolbar extends BaseToolbar {
     private createOverflowButton(iconSvg: SVGElement, ariaLabel: string): HTMLButtonElement {
         const btn = document.createElement("button");
         btn.className = "clickable-icon";
+        btn.setAttribute("aria-disabled", "false");
         btn.setAttribute("aria-label", ariaLabel);
         btn.appendChild(iconSvg);
         return btn;

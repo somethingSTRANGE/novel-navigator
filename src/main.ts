@@ -361,17 +361,6 @@ export default class NovelNavigatorPlugin extends Plugin {
     // UI Helpers
     // ─────────────────────────────────────────────
 
-    private createChapterButton = (chapter: ChapterEntry, label: string) => {
-        const btn = document.createElement("button");
-        btn.classList.add("clickable-icon");
-        btn.setAttribute("aria-label", chapter.chapterLabel);
-        btn.textContent = label;
-        btn.addEventListener("click", () => {
-            if (chapter.file) this.app.workspace.openLinkText(chapter.file.path, "/", false);
-        });
-        return btn;
-    };
-
     private buildBookToolbarTruncateEnd(toolbar: HTMLElement, book: BookEntry) {
         toolbar.innerHTML = "";
 
@@ -428,19 +417,6 @@ export default class NovelNavigatorPlugin extends Plugin {
         buttons.forEach(btn => controls.appendChild(btn));
         toolbar.appendChild(controls);
     }
-
-    private createOverflowButton(
-        iconSvg: SVGElement,
-        ariaLabel: string
-    ): HTMLButtonElement {
-        const btn = document.createElement("button");
-        btn.className = "clickable-icon";
-        btn.setAttribute("aria-disabled", "false");
-        btn.setAttribute("aria-label", ariaLabel);
-        btn.appendChild(iconSvg);
-        return btn;
-    }
-
 
     private getAdjacentChapterTarget(
         chapter: ChapterEntry,
@@ -565,11 +541,5 @@ export default class NovelNavigatorPlugin extends Plugin {
                 return;
             }
         }
-    }
-
-    private svgFromString(svgText: string): SVGElement {
-        const template = document.createElement("template");
-        template.innerHTML = svgText.trim();
-        return template.content.firstElementChild as SVGElement;
     }
 }
