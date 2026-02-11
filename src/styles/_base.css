@@ -1,3 +1,16 @@
+.nn-toolbar {
+	--nn-toolbar-background: var(--background-secondary);
+	--nn-toolbar-font-size: var(--font-ui-small);
+	--nn-stage-border-radius: var(--clickable-icon-radius);
+	--nn-stage-box-shadow: inset 0 0 4px 1px rgba(0, 0, 0, 0.5);
+	--nn-button-background-active: var(--background-modifier-border);
+	--nn-button-color-active: var(--text-on-accent);
+	--nn-meta-chapter-background: var(--background-modifier-border);
+	--nn-meta-chapter-color: var(--text-normal);
+	--nn-meta-separator-color: var(--text-accent);
+	--nn-meta-text-color: var(--text-formatted);
+}
+
 /* Fix for inconsistent default view-header height */
 .view-header {
 	min-height: var(--header-height);
@@ -8,9 +21,9 @@
 	display: none; /* hidden by default */
 	gap: 16px;
 	padding: 6px 12px;
-	border-bottom: 1px solid var(--background-modifier-border);
-	background-color: var(--background-secondary);
-	font-size: 12px;
+	/*border-bottom: 1px solid var(--background-modifier-border);*/
+	background-color: var(--nn-toolbar-background);
+	font-size: var(--nn-toolbar-font-size);
 	line-height: 1.4;
 	width: 100%;
 }

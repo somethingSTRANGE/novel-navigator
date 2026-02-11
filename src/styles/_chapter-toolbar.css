@@ -1,8 +1,8 @@
 .nn-toolbar[data-nn-type="chapter-stage"] {
 	& .clickable-icon[aria-disabled="true"][data-active] {
 		opacity: 1;
-		background-color: var(--background-modifier-border);
-		color: var(--text-on-accent);
+		background-color: var(--nn-button-background-active);
+		color: var(--nn-button-color-active);
 		cursor: default;
 	}
 
@@ -20,8 +20,8 @@
 	& .nn-controls__stage {
 		display: flex;
 		gap: 1px;
-		border-radius: var(--clickable-icon-radius);
-		box-shadow: inset 0 0 4px 1px rgba(0, 0, 0, 0.5);
+		border-radius: var(--nn-stage-border-radius);
+		box-shadow: var(--nn-stage-box-shadow)
 	}
 
 	& .nn-meta {
@@ -29,7 +29,6 @@
 		flex: 1 1 auto;
 		align-items: center;
 		overflow: hidden;
-		font-size: 0.625rem;
 		white-space: nowrap;
 		container-type: inline-size;
 	}
@@ -43,7 +42,7 @@
 			content: "::";
 			margin: 0 0.5rem;
 			opacity: 0.5;
-			color: var(--text-muted);
+			color: var(--nn-meta-separator-color);
 		}
 	}
 
@@ -53,19 +52,19 @@
 		flex-shrink: 1; /* can shrink/disappear */
 		min-width: 20px; /* allows proper shrinking */
 		overflow: hidden;
-		color: var(--text-muted);
+		color: var(--nn-meta-text-color);
 		text-overflow: ellipsis; /* truncate if too long */
 		white-space: nowrap; /* keep the segment together */
 	}
 
 	& .nn-meta__segment--chapter {
 		flex-shrink: 0; /* never shrink */
-		color: var(--text-normal);
 	}
 
 	& .nn-meta__segment--chapter-label {
 		padding: 0.125rem 0.375rem;
 		border-radius: 0.25rem;
-		background-color: var(--background-modifier-border);
+		background-color: var(--nn-meta-chapter-background);
+		color: var(--nn-meta-chapter-color);
 	}
 }
