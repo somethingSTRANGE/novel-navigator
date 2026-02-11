@@ -12,8 +12,6 @@ import {
 } from "./types";
 
 export class NovelIndexer {
-    private lastIndex: NovelIndex | null = null;
-
     constructor(private app: App) {
     }
 
@@ -112,9 +110,7 @@ export class NovelIndexer {
             }
         }
 
-        const index = {books, chapters, stages};
-        this.lastIndex = index; // Cache it for navigation lookups.
-        return index;
+        return {books, chapters, stages};
     }
 
     public resolveWikiLink(link: string | undefined, sourceFile: TFile): TFile | undefined {
@@ -127,10 +123,6 @@ export class NovelIndexer {
     }
 
     public getNavigationTargets(stage: StageEntry): ChapterNavigationTargets {
-        if (!this.lastIndex) {
-            console.warn("Navigation requested before index was built.");
-        }
-
         const {chapter} = stage;
 
         return {
