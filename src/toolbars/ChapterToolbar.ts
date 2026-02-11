@@ -1,9 +1,7 @@
 // src/toolbars/ChapterToolbar.ts
 import {App, TFile} from "obsidian";
 import {BaseToolbar} from "./BaseToolbar";
-
-import {ChapterEntry, ChapterNavigationTargets, StageEntry,} from "../types";
-
+import {ChapterEntry, ChapterNavigationTargets, StageEntry} from "../types";
 
 interface ChapterToolbarIcons {
     book: string;
