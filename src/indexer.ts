@@ -1,5 +1,6 @@
 // src/indexer.ts
 import {App, TFile} from "obsidian";
+import {logger} from './logger';
 import {
     BookEntry,
     ChapterEntry,
@@ -151,7 +152,7 @@ export class NovelIndexer {
 
     public getNavigationTargets(stage: StageEntry): ChapterNavigationTargets {
         if (!this.lastIndex) {
-            console.warn("Navigation requested before index was built.");
+            logger.warn("Navigation requested before index was built.");
         }
 
         const {chapter} = stage;

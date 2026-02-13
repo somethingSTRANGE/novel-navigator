@@ -9,6 +9,7 @@ import chapterIcon from "./icons/chapter-info/section.solid.svg";
 import bookIcon from "./icons/book-info/book-section.solid.svg";
 import ellipsisIcon from "./icons/ellipsis/ellipsis.solid.svg";
 
+import {logger, setLoggerName} from './logger';
 import {NovelIndexer} from "./indexer";
 
 import {BookToolbar} from "./toolbars/BookToolbar";
@@ -25,14 +26,15 @@ export default class NovelNavigatorPlugin extends Plugin {
     // ─────────────────────────────────────────────
 
     async onload() {
-        console.log("Novel Navigator loaded");
+        setLoggerName(this.manifest.name);
+        logger.info(`Loading plugin ${this.manifest.version} ...`);
 
         this.indexer = new NovelIndexer(this.app);
         await this.rebuildNovelIndex();
 
         this.registerEvent(
             this.app.metadataCache.on("resolved", () => {
-                this.rebuildNovelIndex();
+                void this.rebuildNovelIndex();
                 this.app.workspace.iterateAllLeaves((leaf) => {
                     this.updateToolbarForLeaf(leaf);
                 });
@@ -61,10 +63,11 @@ export default class NovelNavigatorPlugin extends Plugin {
             })
         }));
 
+        logger.info(`Plugin loaded`);
     }
 
     onunload() {
-        console.log("Novel Navigator unloaded");
+        logger.info(`Unloading plugin ...`);
 
         // 1. Destroy all handlers (disconnects observers)
         this.handlers.forEach(handler => handler.destroy());
@@ -73,6 +76,8 @@ export default class NovelNavigatorPlugin extends Plugin {
         // 2. Remove the actual DOM elements
         this.toolbars.forEach(toolbar => toolbar.remove());
         this.toolbars.clear();
+
+        logger.info(`Plugin unloaded`);
     }
 
     // ─────────────────────────────────────────────
@@ -82,11 +87,11 @@ export default class NovelNavigatorPlugin extends Plugin {
     private async rebuildNovelIndex() {
         let index = await this.indexer.buildIndex();
 
-        console.log("Novel index rebuilt", {
-            books: index.books.size,
-            chapters: index.chapters.size,
-            stages: index.stages.size,
-        });
+        // logger.info("Novel index rebuilt", {
+        //     books: index.books.size,
+        //     chapters: index.chapters.size,
+        //     stages: index.stages.size,
+        // });
     }
 
     // ─────────────────────────────────────────────
@@ -142,6 +147,9 @@ export default class NovelNavigatorPlugin extends Plugin {
         const file = view instanceof MarkdownView ? view.file : null;
         if (!file) return;
 
+        // logger.info("=====");
+        // logger.info("Updating toolbar for leaf:", leaf.view.getViewType());
+
         const leafContent = view.containerEl;
         const toolbar = leafContent.querySelector<HTMLDivElement>(
             ".nn-toolbar"
@@ -172,7 +180,7 @@ export default class NovelNavigatorPlugin extends Plugin {
                     this.handlers.set(leaf, handler);
                 }
 
-                handler.update(mode.book);
+                handler.refresh(mode.book);
                 return;
             }
 
