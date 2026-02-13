@@ -1,4 +1,5 @@
 .nn-toolbar {
+	--nn-css-ready: 1;
 	--nn-toolbar-background: var(--background-secondary);
 	--nn-toolbar-font-size: var(--font-ui-small);
 	--nn-stage-border-radius: var(--clickable-icon-radius);
