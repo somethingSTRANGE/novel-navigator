@@ -22,7 +22,6 @@
 		justify-content: center;
 		min-width: calc(var(--size-4-4) + (var(--size-2-3) * 2));
 		height: 24px;
-		border: 1px solid silver;
 
 		&.is-hidden {
 			display: none !important;
@@ -40,10 +39,9 @@
 		}
 	}
 
-	& .nn-overflow-btn {
-		display: none; /* Hidden by default */
+	& .nn-button-overflow {
+		display: flex;
 		flex-shrink: 0;
 		width: 30px;
-		margin: 0 4px;
 	}
 }
